@@ -198,6 +198,19 @@ INSERT INTO alerts (
 );
 
 -- ============================================================
+-- 3.5 SYNC HULL NUMBERS IN DESCRIPTIONS DYNAMICALLY
+-- ============================================================
+-- Query ini mencocokkan kode DT-XX di deskripsi dengan nomor lambung truk yang sebenarnya
+UPDATE alerts a
+SET description = REGEXP_REPLACE(
+  REGEXP_REPLACE(a.description, 'DT-\d+', v.hull_number, 'g'),
+  'DT-\d+', v.hull_number, 'g'
+)
+FROM trips t
+JOIN vehicles v ON v.id = t.vehicle_id
+WHERE t.id = a.trip_id;
+
+-- ============================================================
 -- 4. VERIFIKASI DATA
 -- ============================================================
 SELECT 
