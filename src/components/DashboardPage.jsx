@@ -84,6 +84,7 @@ export default function DashboardPage() {
               selectedTruckId={selectedTruckId}
               selectedTrip={activeTrips.find(t => t.id === selectedTripId) || null}
               activeTrips={activeTrips}
+              alerts={alerts}
             />
           </div>
         </div>

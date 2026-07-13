@@ -31,7 +31,7 @@ function CustomTooltip({ active, payload }) {
   );
 }
 
-export default function FuelGraph({ selectedTripId, selectedTruckId, selectedTrip, activeTrips = [] }) {
+export default function FuelGraph({ selectedTripId, selectedTruckId, selectedTrip, activeTrips = [], alerts = [] }) {
   const { fuelData, loading } = useFuelData(selectedTripId);
 
   const chartData = useMemo(() => {
@@ -54,10 +54,38 @@ export default function FuelGraph({ selectedTripId, selectedTruckId, selectedTri
     return events;
   }, [chartData]);
 
+  // Look up active anomalies from database for this trip
+  const activeAlertsForTrip = useMemo(() => {
+    if (!selectedTripId) return [];
+    return alerts.filter(a => a.trip_id === selectedTripId && a.status !== 'resolved');
+  }, [alerts, selectedTripId]);
+
   const latestFuel = chartData.length > 0 ? chartData[chartData.length - 1].fuel_level_liter : null;
   const fuelBefore = selectedTrip?.fuel_before_liter ? parseFloat(selectedTrip.fuel_before_liter) : null;
   const fuelUsedPercent = fuelBefore && latestFuel ? Math.round(((fuelBefore - latestFuel) / fuelBefore) * 100) : null;
   const driverName = selectedTrip?.drivers?.name || '';
+
+  // Get active fraud label
+  const fraudStatusText = useMemo(() => {
+    if (activeAlertsForTrip.length > 0) {
+      const firstAlert = activeAlertsForTrip[0];
+      const labels = {
+        fuel_theft: 'Pencurian',
+        fuel_leak: 'Kebocoran',
+        route_deviation: 'Deviasi Rute',
+        unauthorized_refuel: 'Isi Ilegal',
+        speed_anomaly: 'Overspeed',
+        excessive_idle: 'Mesin Idle',
+        odometer_fraud: 'Odometer',
+        fuel_siphoning: 'Kuras Solar',
+        unauthorized_stop: 'Zona Merah',
+        abnormal_consumption: 'Boros Solar',
+        receipt_fraud: 'Struk Palsu'
+      };
+      return labels[firstAlert.fraud_type] || 'Ada Anomali';
+    }
+    return 'Aman';
+  }, [activeAlertsForTrip]);
 
   return (
     <div className="fuel-graph glass-card" id="fuel-graph">
@@ -68,13 +96,13 @@ export default function FuelGraph({ selectedTripId, selectedTruckId, selectedTri
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          {fuelTheftEvents.length > 0 && (
+          {(fuelTheftEvents.length > 0 || activeAlertsForTrip.length > 0) && (
             <span style={{
               display: 'flex', alignItems: 'center', gap: 4,
               fontSize: 10, background: 'rgba(239,68,68,0.12)', color: '#ef4444',
               border: '1px solid rgba(239,68,68,0.25)', padding: '2px 8px', borderRadius: 6, fontWeight: 700,
             }}>
-              <AlertTriangle size={10} /> {fuelTheftEvents.length} Anomali
+              <AlertTriangle size={10} /> {Math.max(fuelTheftEvents.length, activeAlertsForTrip.length)} Anomali
             </span>
           )}
           {selectedTruckId && (
@@ -98,8 +126,8 @@ export default function FuelGraph({ selectedTripId, selectedTruckId, selectedTri
           </div>
           {fuelBefore && (
             <div style={{ flex: 1, background: 'rgba(29,29,29,0.5)', borderRadius: 8, padding: '8px 12px', border: '1px solid rgba(229,229,229,0.06)' }}>
-              <p style={{ color: '#686868', fontSize: 10, margin: '0 0 3px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Terpakai</p>
-              <p style={{ color: fuelUsedPercent > 20 ? '#ef4444' : '#22c55e', fontSize: 18, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+               <p style={{ color: '#686868', fontSize: 10, margin: '0 0 3px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Terpakai</p>
+              <p style={{ color: (fuelUsedPercent > 20 || activeAlertsForTrip.length > 0) ? '#ef4444' : '#22c55e', fontSize: 18, fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
                 <TrendingDown size={14} />
                 {(fuelBefore - latestFuel).toFixed(1)} L
               </p>
@@ -107,8 +135,8 @@ export default function FuelGraph({ selectedTripId, selectedTruckId, selectedTri
           )}
           <div style={{ flex: 1, background: 'rgba(29,29,29,0.5)', borderRadius: 8, padding: '8px 12px', border: '1px solid rgba(229,229,229,0.06)' }}>
             <p style={{ color: '#686868', fontSize: 10, margin: '0 0 3px', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Anomali</p>
-            <p style={{ color: fuelTheftEvents.length > 0 ? '#ef4444' : '#22c55e', fontSize: 18, fontWeight: 700, margin: 0 }}>
-              {fuelTheftEvents.length > 0 ? `⚠ ${fuelTheftEvents.length}` : '✓ Aman'}
+            <p style={{ color: activeAlertsForTrip.length > 0 ? '#ef4444' : '#22c55e', fontSize: 16, fontWeight: 700, margin: 0 }}>
+              {activeAlertsForTrip.length > 0 ? `⚠ ${fraudStatusText}` : '✓ Aman'}
             </p>
           </div>
         </div>
