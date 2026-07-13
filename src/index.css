@@ -381,8 +381,59 @@ img {
   );
 }
 
-/* ========== TWO-COLUMN LAYOUT ========== */
+/* ========== NEW MAIN DASHBOARD LAYOUT (MAP-HERO) ========== */
 
+.dashboard-main-layout {
+  display: grid;
+  grid-template-columns: 65fr 35fr;
+  gap: var(--spacing-20);
+  padding: var(--spacing-24) 0 var(--spacing-40);
+  align-items: start;
+}
+
+.dashboard-col-left {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-16);
+  min-width: 0;
+}
+
+.dashboard-col-right {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: sticky;
+  top: var(--spacing-24);
+  max-height: calc(100vh - 180px);
+  overflow: hidden;
+}
+
+/* Map hero — dominant, tall */
+.map-hero {
+  width: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+/* Fuel panel */
+.fuel-panel {
+  width: 100%;
+}
+
+/* Right panel */
+.right-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border-radius: 16px;
+  background: rgba(16, 16, 16, 0.85);
+  border: 1px solid rgba(255,255,255,0.06);
+  backdrop-filter: blur(20px);
+  min-height: 0;
+  max-height: calc(100vh - 240px);
+}
+
+/* ========== LEGACY (kept for backward compat) ========== */
 .dashboard-grid {
   display: grid;
   grid-template-columns: 1.5fr 1fr;
@@ -448,12 +499,14 @@ img {
   border-radius: 16px;
   overflow: hidden;
   background: var(--color-graphite);
-  min-height: 340px;
+  min-height: 520px;
 }
 
 .map-container__map {
   width: 100%;
-  height: 340px;
+  height: 65vh;
+  min-height: 480px;
+  max-height: 700px;
   transition: opacity 0.5s ease;
 }
 
@@ -2175,4 +2228,81 @@ img {
 }
 
 
+
+/* ===========================================
+   MOBILE RESPONSIVE — SIREKAN DASHBOARD
+   =========================================== */
+
+/* === TABLET (max 1024px) === */
+@media (max-width: 1024px) {
+  .dashboard-main-layout {
+    grid-template-columns: 58fr 42fr;
+    gap: var(--spacing-16);
+  }
+  .map-container__map {
+    height: 55vh;
+    min-height: 380px;
+  }
+  .map-container__body { min-height: 380px; }
+  .dashboard-col-right { position: static; max-height: none; }
+  .right-panel-body { max-height: 60vh; }
+  .dashboard-header__content { flex-direction: column; align-items: flex-start; gap: var(--spacing-16); }
+  .dashboard-header__stats { flex-wrap: wrap; gap: var(--spacing-8); }
+  .dashboard-header__title { font-size: var(--text-heading-sm); }
+}
+
+/* === MOBILE (max 768px) === */
+@media (max-width: 768px) {
+  .page-container { padding: 0 var(--spacing-16); }
+  .dashboard-header { padding: var(--spacing-24) 0 var(--spacing-20); }
+  .dashboard-header__title { font-size: 26px; letter-spacing: -0.5px; }
+  .dashboard-header__subtitle { font-size: 13px; }
+  .dashboard-header__stats { flex-wrap: wrap; gap: var(--spacing-8); }
+  .stat-card { padding: var(--spacing-12) var(--spacing-16); min-width: 70px; }
+  .stat-card__value { font-size: 20px; }
+
+  /* MAIN LAYOUT — full-width stack */
+  .dashboard-main-layout {
+    grid-template-columns: 1fr !important;
+    gap: var(--spacing-16);
+    padding: var(--spacing-16) 0 120px;
+  }
+  .map-container__map { height: 55vw; min-height: 260px; max-height: 380px; }
+  .map-container__body { min-height: 260px; }
+  .map-hero { border-radius: 16px; }
+  .dashboard-col-right { position: static; max-height: none; overflow: visible; }
+  .right-panel-body { max-height: 70vh; }
+  .right-panel-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 12px; }
+  .panel-tab-btn { padding: 10px 8px; font-size: 13px; text-align: center; }
+  .alert-item { padding: var(--spacing-12); }
+  .alert-item__hull { font-size: 15px; }
+  .incident-feed { position: static; max-height: 65vh; min-height: 300px; }
+  .fuel-graph__body { min-height: 160px; }
+  .glass-card { padding: var(--spacing-16); border-radius: 16px; }
+  .floating-nav__label { display: none; }
+  .floating-nav__link { padding: 8px 12px; }
+}
+
+/* === SMALL MOBILE (max 480px) === */
+@media (max-width: 480px) {
+  .page-container { padding: 0 var(--spacing-12); }
+  .dashboard-header__title { font-size: 22px; }
+  .stat-card { min-width: 64px; padding: 8px 12px; }
+  .stat-card__value { font-size: 18px; }
+  .stat-card__label { font-size: 10px; }
+  .map-container__map { height: 50vw; min-height: 220px; max-height: 300px; }
+  .map-container__body { min-height: 220px; }
+  .panel-tab-btn { font-size: 12px; padding: 8px 6px; }
+  .alert-item__hull { font-size: 14px; }
+  .alert-item__description { font-size: 12px; }
+  .active-driver-card { padding: var(--spacing-12); }
+}
+
+/* === LANDSCAPE MOBILE === */
+@media (max-height: 500px) and (orientation: landscape) {
+  .dashboard-main-layout { grid-template-columns: 55fr 45fr !important; padding-bottom: 80px; }
+  .map-container__map { height: 80vw; min-height: 200px; max-height: 320px; }
+  .dashboard-col-right { position: static; }
+  .dashboard-header { padding: var(--spacing-12) 0; }
+}
 
