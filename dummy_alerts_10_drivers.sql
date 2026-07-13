@@ -211,6 +211,12 @@ JOIN vehicles v ON v.id = t.vehicle_id
 WHERE t.id = a.trip_id;
 
 -- ============================================================
+-- 3.6 SET ALL TRIPS TO IN_PROGRESS
+-- ============================================================
+-- Memastikan semua perjalanan aktif agar semua driver/truk (10 driver) muncul di Peta Live
+UPDATE trips SET status = 'in_progress' WHERE status = 'completed';
+
+-- ============================================================
 -- 4. VERIFIKASI DATA
 -- ============================================================
 SELECT 

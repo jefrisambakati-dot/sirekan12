@@ -870,31 +870,33 @@ img {
   border: 1px solid transparent;
 }
 
-/* Severity via weight/opacity hierarchy — NO color */
+/* Severity with vibrant alert colors */
 .severity-pill--critical {
   font-weight: var(--font-weight-bold);
-  color: var(--color-bone);
-  background: rgba(229, 229, 229, 0.12);
-  border-color: rgba(229, 229, 229, 0.15);
+  color: #ffffff;
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.45);
 }
 
 .severity-pill--high {
   font-weight: var(--font-weight-semibold);
-  color: var(--color-bone);
-  background: rgba(229, 229, 229, 0.08);
-  border-color: rgba(229, 229, 229, 0.1);
+  color: #ffffff;
+  background: rgba(245, 158, 11, 0.2);
+  border-color: rgba(245, 158, 11, 0.4);
 }
 
 .severity-pill--medium {
   font-weight: var(--font-weight-medium);
-  color: var(--color-mist);
-  background: rgba(229, 229, 229, 0.05);
+  color: #fef08a;
+  background: rgba(234, 179, 8, 0.15);
+  border-color: rgba(234, 179, 8, 0.3);
 }
 
 .severity-pill--low {
   font-weight: var(--font-weight-regular);
-  color: var(--color-fog);
-  background: rgba(229, 229, 229, 0.03);
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.25);
 }
 
 /* ========== EMPTY STATE ========== */
