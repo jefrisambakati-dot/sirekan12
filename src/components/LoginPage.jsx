@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
-import { LogIn, UserPlus, ShieldAlert, CheckCircle, Zap } from 'lucide-react';
+import { supabase, isConfigured } from '../lib/supabaseClient';
+import { LogIn, UserPlus, ShieldAlert, CheckCircle, Zap, AlertTriangle } from 'lucide-react';
 
 export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -35,7 +35,14 @@ export default function LoginPage() {
         window.location.hash = '#/dashboard';
       }
     } catch (err) {
-      setErrorMsg(err.message || 'Terjadi kesalahan sistem.');
+      const msg = err.message || 'Terjadi kesalahan sistem.';
+      if (msg.includes('Failed to fetch') || msg.includes('fetch')) {
+        setErrorMsg('Tidak dapat terhubung ke server. Pastikan Environment Variables (VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY) sudah diatur di Vercel dan sudah di-redeploy.');
+      } else if (msg.includes('Invalid login')) {
+        setErrorMsg('Email atau password salah. Silakan coba lagi.');
+      } else {
+        setErrorMsg(msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -78,6 +85,13 @@ export default function LoginPage() {
             Registrasi
           </button>
         </div>
+
+        {!isConfigured && (
+          <div className="login-alert login-alert--error" style={{ background: 'rgba(255, 170, 0, 0.12)', borderColor: 'rgba(255, 170, 0, 0.3)' }}>
+            <AlertTriangle size={16} style={{ flexShrink: 0, color: '#ffaa00' }} />
+            <span style={{ color: '#ffcc44' }}>Supabase belum dikonfigurasi. Set VITE_SUPABASE_URL & VITE_SUPABASE_ANON_KEY di Vercel Environment Variables, lalu Redeploy.</span>
+          </div>
+        )}
 
         {errorMsg && (
           <div className="login-alert login-alert--error">
