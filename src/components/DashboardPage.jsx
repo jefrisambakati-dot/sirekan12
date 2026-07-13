@@ -71,6 +71,7 @@ export default function DashboardPage() {
               selectedTripId={selectedTripId}
               selectedTruckId={selectedTruckId}
               activeTrips={activeTrips}
+              alerts={alerts}
               onSelectTrip={handleSelectTrip}
               onClearSelection={handleClearSelection}
             />

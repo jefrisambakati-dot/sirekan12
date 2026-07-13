@@ -13,6 +13,7 @@ export default function MapContainer({
   selectedTripId,
   selectedTruckId,
   activeTrips = [],
+  alerts = [],
   onSelectTrip,
   onClearSelection
 }) {
@@ -406,42 +407,50 @@ export default function MapContainer({
           ? { lng: optimalPolyline[0][0], lat: optimalPolyline[0][1] }
           : null);
       const hullNum = activeTrip?.vehicles?.hull_number || selectedTruckId || 'Truk';
+      
+      // Check if this selected trip has any open alert
+      const hasAlert = alerts.some(a => a.trip_id === selectedTripId && a.status !== 'resolved');
+      const isCritical = alerts.some(a => a.trip_id === selectedTripId && a.severity === 'critical' && a.status !== 'resolved');
+      
+      const themeColor = hasAlert ? (isCritical ? '#dc2626' : '#f59e0b') : '#6b62f2';
+      const animColor = hasAlert ? (isCritical ? 'rgba(220,38,38,0.2)' : 'rgba(245,158,11,0.2)') : 'rgba(107,98,242,0.2)';
+      const shadowColor = hasAlert ? (isCritical ? 'rgba(220,38,38,0.6)' : 'rgba(245,158,11,0.6)') : 'rgba(107,98,242,0.6)';
 
       if (latestPos) {
         const el = document.createElement('div');
         el.innerHTML = `
           <div style="display:flex;flex-direction:column;align-items:center;">
             <div style="
-              background:linear-gradient(135deg,rgba(107,98,242,0.97),rgba(59,130,246,0.97));
+              background:${hasAlert ? 'rgba(20, 10, 10, 0.95)' : 'linear-gradient(135deg,rgba(107,98,242,0.97),rgba(59,130,246,0.97))'};
               color:#fff;
               padding:4px 10px;
               border-radius:10px;
               font-size:11px;
               font-weight:800;
-              border:2px solid rgba(255,255,255,0.85);
-              box-shadow:0 4px 16px rgba(107,98,242,0.6);
+              border:2px solid ${hasAlert ? themeColor : 'rgba(255,255,255,0.85)'};
+              box-shadow:0 4px 16px ${shadowColor};
               white-space:nowrap;
               margin-bottom:5px;
               font-family:'DM Sans',system-ui,sans-serif;
               letter-spacing:0.3px;
-            ">🚚 ${hullNum} (AKTIF)</div>
+            ">${hasAlert ? '🚨' : '🚚'} ${hullNum} (${hasAlert ? 'ADA ANOMALI' : 'AKTIF'})</div>
             <div style="
               position:relative;
               width:42px;height:42px;
-              background:linear-gradient(135deg,#6b62f2,#3b82f6);
+              background:${themeColor};
               border-radius:50%;
               display:flex;align-items:center;justify-content:center;
               border:3px solid #fff;
-              box-shadow:0 0 0 4px rgba(107,98,242,0.35),0 6px 20px rgba(107,98,242,0.7);
+              box-shadow:0 0 0 4px ${animColor},0 6px 20px ${shadowColor};
             ">
               <div style="
                 position:absolute;
                 width:62px;height:62px;
-                background:rgba(107,98,242,0.2);
+                background:${animColor};
                 border-radius:50%;
-                animation:truck-pulse 1.6s ease-out infinite;
+                animation:truck-pulse 1.3s ease-out infinite;
               "></div>
-              <span style="font-size:18px;z-index:1;">🚚</span>
+              <span style="font-size:18px;z-index:1;">${hasAlert ? '🚨' : '🚚'}</span>
             </div>
           </div>
         `;
@@ -459,16 +468,23 @@ export default function MapContainer({
         const { lat, lng } = trip.latestGps;
         const hullNum = trip.vehicles?.hull_number || 'Truk';
         const driverName = trip.drivers?.name || '';
-        const color = DRIVER_COLORS[idx % DRIVER_COLORS.length];
         const speed = trip.latestGps?.speed ?? 0;
+
+        // Check alerts for this driver/trip
+        const driverAlerts = alerts.filter(a => a.trip_id === trip.id && a.status !== 'resolved');
+        const hasAlert = driverAlerts.length > 0;
+        const isCritical = driverAlerts.some(a => a.severity === 'critical');
+        
+        const baseColor = hasAlert ? (isCritical ? '#ef4444' : '#f59e0b') : DRIVER_COLORS[idx % DRIVER_COLORS.length];
+        const shadowColor = hasAlert ? (isCritical ? 'rgba(239,68,68,0.7)' : 'rgba(245,158,11,0.7)') : `${baseColor}cc`;
 
         const el = document.createElement('div');
         el.style.cursor = 'pointer';
         el.innerHTML = `
           <div style="display:flex;flex-direction:column;align-items:center;">
             <div style="
-              background:rgba(10,10,10,0.9);
-              border:1.5px solid ${color};
+              background:${hasAlert ? 'rgba(30, 5, 5, 0.95)' : 'rgba(10,10,10,0.9)'};
+              border:1.5px solid ${baseColor};
               color:#fff;
               padding:3px 9px;
               border-radius:8px;
@@ -480,19 +496,19 @@ export default function MapContainer({
               text-align:center;
               backdrop-filter:blur(8px);
             ">
-              ${hullNum}${driverName ? `<br/><span style="font-size:10px;font-weight:400;color:#a3a3a3;">${driverName}</span>` : ''}
+              ${hasAlert ? '🚨' : ''} ${hullNum}${driverName ? `<br/><span style="font-size:10px;font-weight:400;color:${hasAlert ? '#fca5a5' : '#a3a3a3'};">${driverName}</span>` : ''}
             </div>
             <div style="
               width:36px;height:36px;
-              background:${color};
+              background:${baseColor};
               border-radius:50%;
               display:flex;align-items:center;justify-content:center;
-              box-shadow:0 0 0 3px rgba(255,255,255,0.2),0 0 16px ${color}cc;
+              box-shadow:0 0 0 3px rgba(255,255,255,0.2),0 0 16px ${shadowColor};
               border:2.5px solid #fff;
               position:relative;
             ">
-              <div style="position:absolute;width:54px;height:54px;background:${color}33;border-radius:50%;animation:truck-pulse 2s ease-out infinite;"></div>
-              <span style="font-size:16px;z-index:1;">🚛</span>
+              <div style="position:absolute;width:54px;height:54px;background:${baseColor}33;border-radius:50%;animation:truck-pulse ${hasAlert ? '1.2s' : '2s'} ease-out infinite;"></div>
+              <span style="font-size:16px;z-index:1;">${hasAlert ? '🚨' : '🚛'}</span>
             </div>
             <div style="
               font-size:10px;color:#d4d4d4;
