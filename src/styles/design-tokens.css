@@ -1,0 +1,89 @@
+/* src/styles/design-tokens.css */
+
+/* Color palette */
+:root {
+  --color-primary: hsl(240, 70%, 55%); /* Indigo */
+  --color-primary-light: hsl(240, 70%, 65%);
+  --color-primary-dark: hsl(240, 70%, 45%);
+  --color-success: hsl(150, 60%, 50%);
+  --color-warning: hsl(40, 80%, 55%);
+  --color-danger: hsl(0, 70%, 55%);
+  --color-bg: hsl(0, 0%, 10%);
+  --color-bg-light: hsl(0, 0%, 14%);
+  --color-card-bg: rgba(255, 255, 255, 0.03);
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+}
+
+/* Breakpoints */
+@media (max-width: 640px) {
+  :root {
+    --bp-sm: 640px;
+  }
+}
+@media (max-width: 768px) {
+  :root {
+    --bp-md: 768px;
+  }
+}
+@media (min-width: 1024px) {
+  :root {
+    --bp-lg: 1024px;
+  }
+}
+
+/* Utility classes */
+.grid-responsive {
+  display: grid;
+  gap: var(--spacing-md);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.full-bleed {
+  width: 100%;
+  margin-left: calc(-1 * var(--spacing-lg));
+  margin-right: calc(-1 * var(--spacing-lg));
+}
+
+.p-mobile {
+  padding: var(--spacing-sm);
+}
+
+.mt-mobile {
+  margin-top: var(--spacing-sm);
+}
+
+.map-focus {
+  position: relative;
+  height: 70vh; /* desktop */
+  background: var(--color-card-bg);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+@media (max-width: 768px) {
+  .map-focus {
+    height: 50vh;
+  }
+}
+
+@media (max-width: 640px) {
+  .map-focus {
+    height: 100vh; /* full screen on mobile */
+  }
+}
+
+.hover-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+}
