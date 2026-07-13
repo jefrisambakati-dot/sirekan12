@@ -1,0 +1,64 @@
+/* SIREKAN — Theme System */
+
+/* ---- Base keyframe animations (supplement to index.css) ---- */
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 0.7; transform: scale(1.04); }
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---- Micro interaction helpers ---- */
+.hover-lift {
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* ---- Theme toggle button ---- */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #fbbf24;
+}
+
+.theme-toggle:hover {
+  background: rgba(255,255,255,0.1);
+  transform: scale(1.08) rotate(12deg);
+}
+
+/* ---- Scrollbar styling (refined) ---- */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* ---- Selection color ---- */
+::selection {
+  background: rgba(107, 98, 242, 0.35);
+  color: #ffffff;
+}
+
+/* ---- Focus visible global (accessibility) ---- */
+:focus-visible {
+  outline: 2px solid rgba(107, 98, 242, 0.6);
+  outline-offset: 2px;
+}

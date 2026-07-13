@@ -1,0 +1,128 @@
+import { useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import { LogIn, UserPlus, ShieldAlert, CheckCircle, Zap } from 'lucide-react';
+
+export default function LoginPage() {
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState(null);
+  const [successMsg, setSuccessMsg] = useState(null);
+
+  async function handleAuth(e) {
+    e.preventDefault();
+    setLoading(true);
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    try {
+      if (isSignUp) {
+        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
+        if (error) throw error;
+        if (data?.user) {
+          const { error: dbError } = await supabase.from('users').insert({
+            id: data.user.id, email, full_name: fullName || 'Admin Dispatcher',
+            password_hash: 'managed_by_supabase_auth', role: 'dispatcher',
+            company_id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
+          });
+          if (dbError) console.warn('Could not sync user profile:', dbError);
+        }
+        setSuccessMsg('Registrasi berhasil! Silakan masuk dengan akun Anda.');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        window.location.hash = '#/dashboard';
+      }
+    } catch (err) {
+      setErrorMsg(err.message || 'Terjadi kesalahan sistem.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="login-container">
+      <div className="login-glow" />
+      <div style={{
+        position: 'absolute', width: '280px', height: '280px',
+        background: 'radial-gradient(circle, rgba(107,98,242,0.07) 0%, transparent 70%)',
+        bottom: '8%', right: '12%', pointerEvents: 'none',
+        animation: 'pulseGlow 9s ease-in-out infinite', animationDelay: '3s',
+      }} />
+
+      <div className="login-card glass-card">
+        <div className="login-card__header">
+          <div style={{
+            width: '52px', height: '52px', borderRadius: '14px',
+            background: 'linear-gradient(135deg, #6b62f2 0%, #9b8ff7 100%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 16px',
+            boxShadow: '0 8px 24px rgba(107, 98, 242, 0.4)',
+          }}>
+            <Zap size={24} color="white" strokeWidth={2.5} />
+          </div>
+          <h2 className="login-card__title">SIREKAN</h2>
+          <p className="login-card__subtitle">COMMAND CENTER DECK</p>
+        </div>
+
+        <div className="login-card__tabs">
+          <button type="button"
+            className={"login-card__tab" + (!isSignUp ? ' login-card__tab--active' : '')}
+            onClick={() => { setIsSignUp(false); setErrorMsg(null); setSuccessMsg(null); }}>
+            Masuk
+          </button>
+          <button type="button"
+            className={"login-card__tab" + (isSignUp ? ' login-card__tab--active' : '')}
+            onClick={() => { setIsSignUp(true); setErrorMsg(null); setSuccessMsg(null); }}>
+            Registrasi
+          </button>
+        </div>
+
+        {errorMsg && (
+          <div className="login-alert login-alert--error">
+            <ShieldAlert size={16} style={{ flexShrink: 0 }} />
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="login-alert login-alert--success">
+            <CheckCircle size={16} style={{ flexShrink: 0 }} />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleAuth} className="login-form">
+          {isSignUp && (
+            <div className="login-form__group">
+              <label className="login-form__label">Nama Lengkap</label>
+              <input type="text" className="login-form__input" placeholder="Admin Sirekan"
+                value={fullName} onChange={(e) => setFullName(e.target.value)} required />
+            </div>
+          )}
+          <div className="login-form__group">
+            <label className="login-form__label">Email</label>
+            <input type="email" className="login-form__input" placeholder="admin@sirekan.com"
+              value={email} onChange={(e) => setEmail(e.target.value)} required />
+          </div>
+          <div className="login-form__group">
+            <label className="login-form__label">Password</label>
+            <input type="password" className="login-form__input" placeholder="••••••••"
+              value={password} onChange={(e) => setPassword(e.target.value)} required />
+          </div>
+          <button type="submit" className="login-form__submit-btn" disabled={loading}>
+            {loading ? 'Memproses...' : isSignUp
+              ? <><UserPlus size={16} />Daftar Akun</>
+              : <><LogIn size={16} />Masuk ke Deck</>
+            }
+          </button>
+        </form>
+
+        <p style={{ textAlign: 'center', fontSize: '11px', color: '#686868', marginTop: '20px', lineHeight: 1.5 }}>
+          Sistem Pemantauan Armada &amp; Deteksi Kecurangan Solar
+        </p>
+      </div>
+    </div>
+  );
+}
