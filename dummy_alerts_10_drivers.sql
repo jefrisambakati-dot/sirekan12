@@ -58,7 +58,12 @@ UPDATE drivers SET
 WHERE id = (SELECT id FROM drivers ORDER BY id LIMIT 1 OFFSET 9);
 
 -- ============================================================
--- 2. HAPUS ALERTS LAMA (bersihkan dulu)
+-- 2. UPDATE FUEL_BEFORE_LITER 250L → 1500L (tangki truk besar)
+-- ============================================================
+UPDATE trips SET fuel_before_liter = 1500 WHERE fuel_before_liter <= 300;
+
+-- ============================================================
+-- 2.5 HAPUS ALERTS LAMA (bersihkan dulu)
 -- ============================================================
 DELETE FROM alerts;
 
@@ -76,7 +81,7 @@ INSERT INTO alerts (
   'critical',
   'open',
   'Deteksi kebocoran solar pada truk DT-01. Volume solar turun 45L dalam 12 menit tanpa pergerakan kendaraan. Kemungkinan selang bocor atau pengurasan ilegal.',
-  '{"fuel_before": 250, "fuel_after": 205, "drop_liters": 45, "duration_minutes": 12, "vehicle_moving": false, "location": "Pelabuhan Nusantara Kendari", "sensor_readings": [250, 247, 241, 230, 215, 205], "timestamp_readings": ["08:01", "08:03", "08:05", "08:07", "08:09", "08:13"]}',
+  '{"fuel_before": 1500, "fuel_after": 1455, "drop_liters": 45, "duration_minutes": 12, "vehicle_moving": false, "location": "Pelabuhan Nusantara Kendari", "sensor_readings": [1500, 1490, 1475, 1460, 1450, 1455], "timestamp_readings": ["08:01", "08:03", "08:05", "08:07", "08:09", "08:13"]}',
   NOW() - INTERVAL '2 hours'
 );
 

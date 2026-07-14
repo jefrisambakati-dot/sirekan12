@@ -6,6 +6,7 @@ import FloatingNav from './components/FloatingNav';
 import LoginPage from './components/LoginPage';
 import ReportsPage from './components/ReportsPage';
 import DriverApp from './components/DriverApp';
+import DriverManagementPage from './components/DriverManagementPage';
 
 function App() {
   const [hash, setHash] = useState(window.location.hash);
@@ -135,10 +136,11 @@ function App() {
   }
 
   const isReports = hash === '#/reports';
+  const isDriverMgmt = hash === '#/drivers';
 
   return (
     <div className="app">
-      {isReports ? <ReportsPage /> : <DashboardPage />}
+      {isReports ? <ReportsPage /> : isDriverMgmt ? <DriverManagementPage /> : <DashboardPage />}
       <FloatingNav currentHash={hash} />
     </div>
   );

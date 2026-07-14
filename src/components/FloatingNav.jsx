@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { LayoutDashboard, FileBarChart, Truck, User, LogOut, Mail, Shield, X } from 'lucide-react';
+import { LayoutDashboard, FileBarChart, Truck, User, LogOut, Mail, Shield, X, Users } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
 
 export default function FloatingNav({ currentHash }) {
   const isDashboard = currentHash === '#/dashboard' || currentHash === '' || currentHash === '#/';
   const isReports   = currentHash === '#/reports';
   const isDriver    = currentHash === '#/driver';
+  const isDriverMgmt = currentHash === '#/drivers';
 
   const [showProfile, setShowProfile] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -50,9 +51,10 @@ export default function FloatingNav({ currentHash }) {
     : userProfile?.role === 'driver' ? '#22c55e' : '#a3a3a3';
 
   const navLinks = [
-    { hash: '#/dashboard', label: 'Dashboard', icon: LayoutDashboard, active: isDashboard },
-    { hash: '#/reports',   label: 'Laporan',   icon: FileBarChart,   active: isReports },
-    { hash: '#/driver',    label: 'App Driver', icon: Truck,          active: isDriver },
+    { hash: '#/dashboard', label: 'Dashboard',  icon: LayoutDashboard, active: isDashboard },
+    { hash: '#/reports',   label: 'Laporan',    icon: FileBarChart,    active: isReports },
+    { hash: '#/drivers',   label: 'Driver',     icon: Users,           active: isDriverMgmt },
+    { hash: '#/driver',    label: 'App Driver', icon: Truck,           active: isDriver },
   ];
 
   return (
