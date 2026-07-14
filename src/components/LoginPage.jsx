@@ -1,12 +1,10 @@
 import { useState } from 'react';
 import { supabase, isConfigured } from '../lib/supabaseClient';
-import { LogIn, UserPlus, ShieldAlert, CheckCircle, Zap, AlertTriangle } from 'lucide-react';
+import { LogIn, ShieldAlert, CheckCircle, Zap, AlertTriangle } from 'lucide-react';
 
 export default function LoginPage() {
-  const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState(null);
   const [successMsg, setSuccessMsg] = useState(null);
@@ -17,23 +15,9 @@ export default function LoginPage() {
     setErrorMsg(null);
     setSuccessMsg(null);
     try {
-      if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({ email, password, options: { data: { full_name: fullName } } });
-        if (error) throw error;
-        if (data?.user) {
-          const { error: dbError } = await supabase.from('users').insert({
-            id: data.user.id, email, full_name: fullName || 'Admin Dispatcher',
-            password_hash: 'managed_by_supabase_auth', role: 'dispatcher',
-            company_id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
-          });
-          if (dbError) console.warn('Could not sync user profile:', dbError);
-        }
-        setSuccessMsg('Registrasi berhasil! Silakan masuk dengan akun Anda.');
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        window.location.hash = '#/dashboard';
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      window.location.hash = '#/dashboard';
     } catch (err) {
       const msg = err.message || 'Terjadi kesalahan sistem.';
       if (msg.includes('Failed to fetch') || msg.includes('fetch')) {
@@ -73,19 +57,6 @@ export default function LoginPage() {
           <p className="login-card__subtitle">COMMAND CENTER DECK</p>
         </div>
 
-        <div className="login-card__tabs">
-          <button type="button"
-            className={"login-card__tab" + (!isSignUp ? ' login-card__tab--active' : '')}
-            onClick={() => { setIsSignUp(false); setErrorMsg(null); setSuccessMsg(null); }}>
-            Masuk
-          </button>
-          <button type="button"
-            className={"login-card__tab" + (isSignUp ? ' login-card__tab--active' : '')}
-            onClick={() => { setIsSignUp(true); setErrorMsg(null); setSuccessMsg(null); }}>
-            Registrasi
-          </button>
-        </div>
-
         {!isConfigured && (
           <div className="login-alert login-alert--error" style={{ background: 'rgba(255, 170, 0, 0.12)', borderColor: 'rgba(255, 170, 0, 0.3)' }}>
             <AlertTriangle size={16} style={{ flexShrink: 0, color: '#ffaa00' }} />
@@ -107,14 +78,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        <form onSubmit={handleAuth} className="login-form">
-          {isSignUp && (
-            <div className="login-form__group">
-              <label className="login-form__label">Nama Lengkap</label>
-              <input type="text" className="login-form__input" placeholder="Admin Sirekan"
-                value={fullName} onChange={(e) => setFullName(e.target.value)} required />
-            </div>
-          )}
+        <form onSubmit={handleAuth} className="login-form" style={{ marginTop: '20px' }}>
           <div className="login-form__group">
             <label className="login-form__label">Email</label>
             <input type="email" className="login-form__input" placeholder="admin@sirekan.com"
@@ -126,10 +90,7 @@ export default function LoginPage() {
               value={password} onChange={(e) => setPassword(e.target.value)} required />
           </div>
           <button type="submit" className="login-form__submit-btn" disabled={loading}>
-            {loading ? 'Memproses...' : isSignUp
-              ? <><UserPlus size={16} />Daftar Akun</>
-              : <><LogIn size={16} />Masuk ke Deck</>
-            }
+            {loading ? 'Memproses...' : <><LogIn size={16} />Masuk ke Deck</>}
           </button>
         </form>
 

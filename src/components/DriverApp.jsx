@@ -91,6 +91,39 @@ export default function DriverApp() {
       setLoading(true);
       setErrorMsg(null);
       try {
+        // 1. Check if a token is passed in the URL (e.g. from scanning with standard phone camera)
+        const hash = window.location.hash;
+        if (hash.includes('?')) {
+          const query = hash.split('?')[1];
+          const params = new URLSearchParams(query);
+          const urlToken = params.get('token') || params.get('driverId');
+          if (urlToken && mounted) {
+            // Remove the token query param from URL to clean it up
+            window.location.hash = hash.split('?')[0];
+            await handleVerifyDriverToken(urlToken);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // 2. Check if a token is saved in localStorage (keeps supir logged in)
+        const savedToken = localStorage.getItem('driverToken');
+        if (savedToken && mounted) {
+          const { data: driverData, error: driverErr } = await supabase
+            .from('drivers')
+            .select('*')
+            .eq('qr_token', savedToken)
+            .single();
+
+          if (!driverErr && driverData && mounted) {
+            setDriver(driverData);
+            await fetchDriverTrips(driverData.id);
+            setLoading(false);
+            return;
+          }
+        }
+
+        // 3. Fallback to Supabase session role (legacy fallback)
         const { data: { session } } = await supabase.auth.getSession();
         if (!mounted) return;
         
@@ -244,11 +277,18 @@ export default function DriverApp() {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const trimmedToken = token.trim();
+      let cleanToken = token.trim();
+      // If the scanned text is a full URL, extract the token/driverId parameter
+      if (cleanToken.includes('?')) {
+        const query = cleanToken.split('?')[1];
+        const params = new URLSearchParams(query);
+        cleanToken = params.get('token') || params.get('driverId') || cleanToken;
+      }
+
       const { data: driverData, error: driverErr } = await supabase
         .from('drivers')
         .select('*')
-        .eq('qr_token', trimmedToken)
+        .eq('qr_token', cleanToken)
         .single();
 
       if (driverErr || !driverData) {
@@ -256,6 +296,7 @@ export default function DriverApp() {
       }
 
       setDriver(driverData);
+      localStorage.setItem('driverToken', cleanToken); // Persist driver token locally
       await fetchDriverTrips(driverData.id);
     } catch (err) {
       console.error(err);
@@ -421,10 +462,7 @@ export default function DriverApp() {
   }
 
   async function handleReset() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      await supabase.auth.signOut();
-    }
+    localStorage.removeItem('driverToken'); // Clear driver profile
     setDriver(null);
     setPlannedTrips([]);
     setActiveTrip(null);
@@ -432,7 +470,8 @@ export default function DriverApp() {
     setFuelBefore('');
     setErrorMsg(null);
     setSuccessMsg(null);
-    window.location.hash = '#/login';
+    // Stay on driver scan screen
+    window.location.hash = '#/driver';
   }
 
   return (

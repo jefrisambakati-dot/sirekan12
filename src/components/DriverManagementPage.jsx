@@ -11,7 +11,7 @@ import {
 // ─── QR Modal ────────────────────────────────────────────────────────────────
 function QrModal({ driver, appUrl, onClose }) {
   const canvasRef = useRef(null);
-  const qrValue = `${appUrl}/#/driver?driverId=${driver.id}`;
+  const qrValue = `${appUrl}/#/driver?token=${driver.qr_token || ''}`;
 
   function handleDownload() {
     const canvas = document.getElementById(`qr-canvas-${driver.id}`);
@@ -39,6 +39,7 @@ function QrModal({ driver, appUrl, onClose }) {
       <body>
         <h2>${driver.name}</h2>
         <p>${driver.phone || ''} ${driver.license_number ? '· SIM: ' + driver.license_number : ''}</p>
+        <p style="font-size:12px;color:#888;">Token: ${driver.qr_token || '—'}</p>
         <img src="${dataUrl}" width="220"/>
         <div class="info">Scan QR untuk akses App Driver SIREKAN</div>
       </body></html>
@@ -102,12 +103,9 @@ function DriverFormModal({ driver, onClose, onSuccess }) {
     name: driver?.name || '',
     phone: driver?.phone || '',
     license_number: driver?.license_number || '',
-    email: driver?.email || '',
-    password: '',
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showPw, setShowPw] = useState(false);
 
   function handleChange(e) {
     setForm(f => ({ ...f, [e.target.name]: e.target.value }));
@@ -117,8 +115,6 @@ function DriverFormModal({ driver, onClose, onSuccess }) {
     e.preventDefault();
     setError('');
     if (!form.name.trim()) { setError('Nama wajib diisi.'); return; }
-    if (!isEdit && !form.email.trim()) { setError('Email wajib diisi untuk driver baru.'); return; }
-    if (!isEdit && !form.password) { setError('Password wajib diisi untuk driver baru.'); return; }
 
     setLoading(true);
     try {
@@ -126,35 +122,27 @@ function DriverFormModal({ driver, onClose, onSuccess }) {
         // Update driver record
         const { error: dErr } = await supabase
           .from('drivers')
-          .update({ name: form.name.trim(), phone: form.phone.trim(), license_number: form.license_number.trim() })
+          .update({ 
+            name: form.name.trim(), 
+            phone: form.phone.trim(), 
+            license_number: form.license_number.trim() 
+          })
           .eq('id', driver.id);
         if (dErr) throw dErr;
       } else {
-        // 1. Create auth user
-        const { data: authData, error: authErr } = await supabase.auth.signUp({
-          email: form.email.trim(),
-          password: form.password,
-        });
-        if (authErr) throw authErr;
+        // Generate a clean and readable unique token format like: qr_budi_47
+        const cleanName = form.name.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+        const randomNum = Math.floor(10 + Math.random() * 90);
+        const generatedQrToken = `qr_${cleanName}_${randomNum}`;
 
-        const userId = authData.user?.id;
-        if (!userId) throw new Error('Gagal membuat akun auth.');
-
-        // 2. Insert into users table (role: driver)
-        const { error: uErr } = await supabase.from('users').upsert({
-          id: userId,
-          email: form.email.trim(),
-          full_name: form.name.trim(),
-          role: 'driver',
-        });
-        if (uErr) throw uErr;
-
-        // 3. Insert into drivers table
+        // Directly insert into drivers table (no auth signUp needed)
         const { error: dErr } = await supabase.from('drivers').insert({
-          user_id: userId,
+          company_id: 'a1b2c3d4-e5f6-7a8b-9c0d-1e2f3a4b5c6d',
           name: form.name.trim(),
           phone: form.phone.trim(),
           license_number: form.license_number.trim(),
+          qr_token: generatedQrToken,
+          status: 'active'
         });
         if (dErr) throw dErr;
       }
@@ -188,7 +176,7 @@ function DriverFormModal({ driver, onClose, onSuccess }) {
             </div>
           )}
 
-          <div className="dm-form-grid">
+          <div className="dm-form-grid" style={{ gridTemplateColumns: '1fr' }}>
             <div className="dm-field">
               <label className="dm-label"><User size={12} /> Nama Lengkap *</label>
               <input className="dm-input" name="name" value={form.name} onChange={handleChange} placeholder="Nama lengkap driver" required />
@@ -201,36 +189,6 @@ function DriverFormModal({ driver, onClose, onSuccess }) {
               <label className="dm-label"><CreditCard size={12} /> Nomor SIM</label>
               <input className="dm-input" name="license_number" value={form.license_number} onChange={handleChange} placeholder="Nomor SIM" />
             </div>
-            {!isEdit && (
-              <>
-                <div className="dm-field">
-                  <label className="dm-label"><Mail size={12} /> Email (untuk login) *</label>
-                  <input className="dm-input" name="email" type="email" value={form.email} onChange={handleChange} placeholder="email@domain.com" required />
-                </div>
-                <div className="dm-field">
-                  <label className="dm-label">Password *</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      className="dm-input"
-                      name="password"
-                      type={showPw ? 'text' : 'password'}
-                      value={form.password}
-                      onChange={handleChange}
-                      placeholder="Min. 6 karakter"
-                      style={{ paddingRight: 40 }}
-                      required
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPw(v => !v)}
-                      style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#686868', display: 'flex' }}
-                    >
-                      {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
           </div>
 
           <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
@@ -498,7 +456,7 @@ export default function DriverManagementPage() {
           <QRCodeCanvas
             key={d.id}
             id={`qr-canvas-${d.id}`}
-            value={`${appUrl}/#/driver?driverId=${d.id}`}
+            value={`${appUrl}/#/driver?token=${d.qr_token || ''}`}
             size={300}
             level="H"
           />
