@@ -91,19 +91,32 @@ export default function DriverApp() {
       setLoading(true);
       setErrorMsg(null);
       try {
-        // 1. Check if a token is passed in the URL (e.g. from scanning with standard phone camera)
+        // 1. Check URL for token — supports both:
+        //    Hash routing:  /#/driver?token=qr_budi_01
+        //    Search params: /driver?token=qr_budi_01
+        let urlToken = null;
+
+        // Check window.location.search first (non-hash routing)
+        if (window.location.search) {
+          const sp = new URLSearchParams(window.location.search);
+          urlToken = sp.get('token') || sp.get('driverId');
+        }
+
+        // Check hash portion: e.g. #/driver?token=qr_budi_01
         const hash = window.location.hash;
-        if (hash.includes('?')) {
-          const query = hash.split('?')[1];
-          const params = new URLSearchParams(query);
-          const urlToken = params.get('token') || params.get('driverId');
-          if (urlToken && mounted) {
-            // Remove the token query param from URL to clean it up
-            window.location.hash = hash.split('?')[0];
-            await handleVerifyDriverToken(urlToken);
-            setLoading(false);
-            return;
-          }
+        if (!urlToken && hash.includes('?')) {
+          const hashQuery = hash.split('?')[1];
+          const hp = new URLSearchParams(hashQuery);
+          urlToken = hp.get('token') || hp.get('driverId');
+        }
+
+        if (urlToken && mounted) {
+          // Clean the URL by removing the query params from the hash
+          const cleanHash = hash.split('?')[0];
+          window.history.replaceState(null, '', window.location.pathname + cleanHash);
+          await handleVerifyDriverToken(urlToken);
+          setLoading(false);
+          return;
         }
 
         // 2. Check if a token is saved in localStorage (keeps supir logged in)
@@ -120,6 +133,9 @@ export default function DriverApp() {
             await fetchDriverTrips(driverData.id);
             setLoading(false);
             return;
+          } else {
+            // Token invalid/expired — clear it
+            localStorage.removeItem('driverToken');
           }
         }
 

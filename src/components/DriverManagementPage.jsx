@@ -11,7 +11,12 @@ import {
 // ─── QR Modal ────────────────────────────────────────────────────────────────
 function QrModal({ driver, appUrl, onClose }) {
   const canvasRef = useRef(null);
-  const qrValue = `${appUrl}/#/driver?token=${driver.qr_token || ''}`;
+
+  // Build the correct QR URL — works even when hash routing is used
+  const baseUrl = appUrl.replace(/\/$/, '');
+  const qrValue = driver.qr_token
+    ? `${baseUrl}/#/driver?token=${driver.qr_token}`
+    : '';
 
   function handleDownload() {
     const canvas = document.getElementById(`qr-canvas-${driver.id}`);
@@ -34,18 +39,44 @@ function QrModal({ driver, appUrl, onClose }) {
         h2{margin:0 0 4px;font-size:22px;}
         p{margin:0 0 20px;color:#666;font-size:14px;}
         img{border:2px solid #eee;border-radius:12px;padding:12px;}
+        .token{margin-top:8px;font-size:13px;font-family:monospace;background:#f5f5f5;padding:6px 12px;border-radius:6px;display:inline-block;}
         .info{margin-top:20px;font-size:13px;color:#444;}
       </style></head>
       <body>
         <h2>${driver.name}</h2>
         <p>${driver.phone || ''} ${driver.license_number ? '· SIM: ' + driver.license_number : ''}</p>
-        <p style="font-size:12px;color:#888;">Token: ${driver.qr_token || '—'}</p>
         <img src="${dataUrl}" width="220"/>
+        <div class="token">Token: ${driver.qr_token || '—'}</div>
         <div class="info">Scan QR untuk akses App Driver SIREKAN</div>
       </body></html>
     `);
     win.document.close();
     win.print();
+  }
+
+  if (!driver.qr_token) {
+    return (
+      <div className="dm-overlay" onClick={onClose}>
+        <div className="dm-modal dm-modal--sm" onClick={e => e.stopPropagation()}>
+          <div className="dm-modal__header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <QrCode size={18} style={{ color: '#ef4444' }} />
+              <h2 className="dm-modal__title">QR Tidak Tersedia</h2>
+            </div>
+            <button className="dm-icon-btn" onClick={onClose}><X size={16} /></button>
+          </div>
+          <div className="dm-modal__body" style={{ textAlign: 'center', padding: '24px 0' }}>
+            <p style={{ color: '#fca5a5', fontSize: 14, marginBottom: 8 }}>
+              Driver <strong style={{ color: '#fff' }}>{driver.name}</strong> belum memiliki QR Token.
+            </p>
+            <p style={{ color: '#686868', fontSize: 13 }}>
+              Refresh halaman untuk auto-generate token, atau hapus dan tambahkan driver ini kembali.
+            </p>
+            <button className="dm-btn dm-btn--outline" style={{ marginTop: 16 }} onClick={onClose}>Tutup</button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -65,22 +96,23 @@ function QrModal({ driver, appUrl, onClose }) {
           }}>
             <QRCodeCanvas
               id={`qr-canvas-${driver.id}`}
+              ref={canvasRef}
               value={qrValue}
               size={220}
               level="H"
-              imageSettings={{
-                src: '/sirekan-logo.svg',
-                x: undefined,
-                y: undefined,
-                height: 40,
-                width: 40,
-                excavate: true,
-              }}
             />
           </div>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#a3a3a3', fontSize: 13, margin: '0 0 4px' }}>Supir scan QR ini untuk membuka App Driver</p>
-            <p style={{ color: '#686868', fontSize: 11, margin: 0, wordBreak: 'break-all' }}>{qrValue}</p>
+          <div style={{ textAlign: 'center', width: '100%' }}>
+            <p style={{ color: '#a3a3a3', fontSize: 13, margin: '0 0 6px' }}>Scan QR ini untuk membuka App Driver SIREKAN</p>
+            <div style={{
+              background: 'rgba(107,98,242,0.08)', border: '1px solid rgba(107,98,242,0.2)',
+              borderRadius: 8, padding: '8px 14px', display: 'inline-block'
+            }}>
+              <span style={{ fontFamily: 'monospace', fontSize: 13, color: '#9b8ff7', letterSpacing: '0.5px' }}>
+                {driver.qr_token}
+              </span>
+            </div>
+            <p style={{ color: '#404040', fontSize: 10, margin: '6px 0 0', wordBreak: 'break-all' }}>{qrValue}</p>
           </div>
           <div style={{ display: 'flex', gap: 10, width: '100%' }}>
             <button className="dm-btn dm-btn--outline" style={{ flex: 1 }} onClick={handleDownload}>
@@ -265,9 +297,20 @@ export default function DriverManagementPage() {
       setLoading(true);
       const { data, error: fetchErr } = await supabase
         .from('drivers')
-        .select('id, name, phone, license_number, created_at')
+        .select('id, name, phone, license_number, qr_token, status, created_at')
         .order('created_at', { ascending: false });
       if (fetchErr) throw fetchErr;
+
+      // Auto-fix any drivers missing a qr_token
+      const toFix = (data || []).filter(d => !d.qr_token);
+      for (const d of toFix) {
+        const cleanName = d.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const randomNum = Math.floor(10 + Math.random() * 90);
+        const generatedToken = `qr_${cleanName}_${randomNum}`;
+        await supabase.from('drivers').update({ qr_token: generatedToken }).eq('id', d.id);
+        d.qr_token = generatedToken; // patch local copy
+      }
+
       setDrivers(data || []);
       setError(null);
     } catch (err) {
